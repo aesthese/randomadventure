@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from random import randint
 import webbrowser
 import urllib2
 from bs4 import BeautifulSoup
-import random
+from randomdotorg import RandomDotOrg
 
+random = RandomDotOrg('RandomAdventure')
 
 print ""
 
 
 def randomAdventure():
     # Vælg tilfældig sæson mellem 1 og 7
-    season = randint(1, 7)
+    season = random.randint(1, 7)
 
     # Der er forskellige antal episoder i hver sæson
     if season <= 4:
@@ -27,7 +27,7 @@ def randomAdventure():
         print "Der er noget helt galt."
 
     # Vælg tilfældig episode
-    episode = randint(1, maxepisode)
+    episode = random.randint(1, maxepisode)
 
 
     # Lav url
@@ -39,7 +39,7 @@ def randomAdventure():
     return url
 
 
-def link1(): #Funktion der vælger tilfældigt streaminglink
+def link1():  # Funktion der vælger tilfældigt streaminglink
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]
     response = opener.open(randomAdventure())
@@ -54,13 +54,14 @@ def link1(): #Funktion der vælger tilfældigt streaminglink
     return streamLink
 
 
-def link2(): #Funktion der åbner den faktiske streamingside
+def link2():  # Funktion der åbner den faktiske streamingside
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]
     response = opener.open(link1())
     html = response.read()
     myList2 = []
     soup = BeautifulSoup(html, "lxml")
+    #Det her er fucking latterligt.
     for a in soup.find_all('a', href=True, class_="myButton"):
         myList2.extend([a['href']])
     return myList2[0]
