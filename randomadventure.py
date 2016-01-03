@@ -1,73 +1,156 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+# SOMEONE PLEASE FORK THIS! I CANT STAND LOOKING AT IT! SO. BADLY. CODED. *crying*
+
+
+import sys
 import webbrowser
+import json
 import urllib2
 from bs4 import BeautifulSoup
 from randomdotorg import RandomDotOrg
 
 random = RandomDotOrg('RandomAdventure')
 
-print ""
+#########INDSTILLINGER#########
+preference = "vodlocker"  # Hvilken streamingside vil du helst benytte?
+#Muligheder:
+"""
+allmyvideos, bestreams, beta.vidup, briskfile, cloudtime, cloudzilla, daclips, filecore,
+filehoot, filenuke, flashx, gorillavid, happystreams, hdshare, letwatch, mega-vids,
+mightyupload, movbux, movdivx, movpod, neodrive, nosvideo, nowvideo, ovfile, promptfile,
+putlocker, realvid, sharerepo, sharesix, skyvids, streamcloud, streamin, thefile, thevideo,
+uploadc, uploaded, vid, vidbull, videla, video, videostoring, vidlockers, vidspot, vidto,
+vidzi, vodlocker, zalaa
+"""
+##############################
 
 
-def randomAdventure():
-    # Vælg tilfældig sæson mellem 1 og 7
-    season = random.randint(1, 7)
-
-    # Der er forskellige antal episoder i hver sæson
-    if season <= 4:
-        maxepisode = 26
-    elif season == 5:
-        maxepisode = 52
-    elif season == 6:
-        maxepisode = 43
-    elif season == 7:
-        maxepisode = 13
-    else:
-        print "Der er noget helt galt."
-
-    # Vælg tilfældig episode
-    episode = random.randint(1, maxepisode)
-
-
-    # Lav url
-    url = "http://watchseries.lt/episode/Adventure-Time-with-Finn-and-Jake_s" + str(season) + "_e" + str(
-        episode) + ".html"
-
-    # Print info
-    print "Sæson " + str(season) + " episode " + str(episode) + " valgt."
-    return url
-
-
-def link1():  # Funktion der vælger tilfældigt streaminglink
+def randomAdventure():  # Funktion der finder et tilfældigt afsnit og dets info vha. Adventure Time API
+    print "Please wait..."
     opener = urllib2.build_opener()
-    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-    response = opener.open(randomAdventure())
+    opener.addheaders = [('User-agent', 'randomAdventure 0.1')]
+
+    # Parse JSON fra webserveren
+    response = opener.open("http://adventuretimeapi.com/api/v1/episodes/")
+    parsed_json = json.loads(response.read())
+
+    # Tjek hvor mange episoder der findes
+    episodeCount = (parsed_json['count'])
+
+    while True:  # Tjek om data fra webserveren indeholder episode og sæson ID (Tjek om det faktisk er en episode)
+
+        # Lav et tilfældigt tal mellem 1 og antallet af episoder
+        episode_api = random.randint(1, episodeCount)
+
+        # Hent data om episoden
+        response = opener.open("http://adventuretimeapi.com/api/v1/episodes/" + str(episode_api))
+        parsed_json = json.loads(response.read())
+
+        # Lav variabler med data
+        season = parsed_json['season_id']
+        episode = parsed_json['episode_id']
+        title = parsed_json['title']
+        description = parsed_json['description']
+
+        # Hvis ikke episode variablen indeholder noget, har vi fået en comic eller lign. fra serveren
+        if episode is not None:
+            break
+        elif episode is None:
+            print "The Adventure Time API gave us something that wasn\'t an episode. Maybe a comic. Trying again..."
+
+    # Sammensæt url med tilfældige tal
+    url = "http://www.watchseries.lt/episode/Adventure-Time-with-Finn-and-Jake_s" + str(season) + "_e" + str(
+            episode) + ".html"
+
+    # Det her er simpelthen for latterligt og der er 100% en meget smartere måde at gøre det på, men jeg er en fucking idiot.
+    # Saml data om episoden i en list
+    episodeInfo = []
+    episodeInfo.append(str(season))
+    episodeInfo.append(str(episode))
+    episodeInfo.append(description)
+    episodeInfo.append(url)
+    episodeInfo.append(title)
+
+    # Return listen med episodedata
+    return episodeInfo
+
+
+def link1():  # Funktion der vælger streaminglink
+    opener = urllib2.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0')]  # Watchseries.lt blokerer underlige user-agents
+    # Suk
+    episodeinfo2 = randomAdventure()
+
+    response = opener.open(str(episodeinfo2[3]))
     html = response.read()
     soup = BeautifulSoup(html, "lxml")
     mylist = []
-    for a in soup.find_all('a', href=True, class_="buttonlink"):
-        # print a['href']
-        mylist.extend([a['href']])
-    mylist.remove(mylist[0])
-    streamLink = "http://watchseries.lt" + random.choice(mylist)
-    return streamLink
+
+    # Benyt foretrukken streamingside
+    if preference != "" and soup.find_all('a', href=True, title=preference) != []:
+
+        for a in soup.find_all('a', href=True, title=preference):
+            mylist.extend([a['href']])
+
+        # Lav URL med tilfældigt valgt link til foretrukken streamingside
+        streamLink = "http://watchseries.lt" + random.choice(mylist)
+        episodeinfo2.append(streamLink)
+
+        return episodeinfo2
+
+    else:
+
+        for a in soup.find_all('a', href=True, class_="buttonlink"):
+            mylist.extend([a['href']])
+
+        # Første link er en reklame - fjern dét.
+        mylist.remove(mylist[0])
+
+        # Lav URL med tilfældigt valgt link til streamingside
+        streamLink = "http://watchseries.lt" + random.choice(mylist)
+        episodeinfo2.append(streamLink)
+
+        return episodeinfo2
 
 
 def link2():  # Funktion der åbner den faktiske streamingside
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-    response = opener.open(link1())
+    # Suk
+    episodeinfo3 = link1()
+    response = opener.open(episodeinfo3[5])
     html = response.read()
     myList2 = []
     soup = BeautifulSoup(html, "lxml")
-    #Det her er fucking latterligt.
+    # Det her er fucking latterligt.
+
+
     for a in soup.find_all('a', href=True, class_="myButton"):
         myList2.extend([a['href']])
-    return myList2[0]
+    episodeinfo3.append(myList2[0])
+
+    return episodeinfo3
 
 
-finalLink = link2()
-print "Åbner streaming link: " + finalLink
-print  ""
-webbrowser.open(finalLink, new=0, autoraise=True)
+while True:
+    # Suuuuuk
+    episodeinfo4 = []
+    episodeinfo4 = link2()
+    # Hvordan undgår jeg at bruge episodeinfo 1, 2, 3 og 4?!?! Det kan ikke være rigtigt!!
+    print ""
+
+    print "Season " + episodeinfo4[0] + " episode " + episodeinfo4[1] + " - \'" + episodeinfo4[4] + "\':"
+    print "\'" + episodeinfo4[2] + "\'"
+    print ""
+
+    cont = raw_input("Do you want to watch this episode? (Y/N): ")
+    while cont.lower() not in ("y", "n"):
+        cont = raw_input("Do you want to watch this episode? (Y/N): ")
+    if cont == "y":
+        print episodeinfo4[6]
+        webbrowser.open(episodeinfo4[6], new=0, autoraise=True)
+        break
+    elif cont == "n":
+        print "Fair enough! Finding another one..."
