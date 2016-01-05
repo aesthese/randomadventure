@@ -4,14 +4,28 @@
 # SOMEONE PLEASE FORK THIS! I CANT STAND LOOKING AT IT! SO. BADLY. CODED. *crying*
 
 
-import sys
+import os
 import webbrowser
 import json
 import urllib2
+from urllib2 import Request, urlopen, URLError
 from bs4 import BeautifulSoup
 from randomdotorg import RandomDotOrg
+import textwrap
 
 random = RandomDotOrg('RandomAdventure')
+
+class bcolors:
+    OKBLUE = '\033[94m'
+    RED = '\033[31m'
+    ENDCOLOR = '\033[0m'
+    BOLD = '\033[1m'
+    ATBG = '\033[40m'
+    ATFG = '\033[33m'
+    DIM = '\033[2m'
+    UNDERLINE = '\033[4m'
+
+
 
 #########INDSTILLINGER#########
 preference = "vodlocker"  # Hvilken streamingside vil du helst benytte?
@@ -28,9 +42,9 @@ vidzi, vodlocker, zalaa
 
 
 def randomAdventure():  # Funktion der finder et tilfældigt afsnit og dets info vha. Adventure Time API
-    print "Please wait..."
+    print "Getting super random numbers from the internetz. Please wait..."
     opener = urllib2.build_opener()
-    opener.addheaders = [('User-agent', 'randomAdventure 0.1')]
+    opener.addheaders = [('User-agent', 'randomAdventure 0.2')]
 
     # Parse JSON fra webserveren
     response = opener.open("http://adventuretimeapi.com/api/v1/episodes/")
@@ -58,7 +72,7 @@ def randomAdventure():  # Funktion der finder et tilfældigt afsnit og dets info
         if episode is not None:
             break
         elif episode is None:
-            print "The Adventure Time API gave us something that wasn\'t an episode. Maybe a comic. Trying again..."
+            print "The Adventure Time API gave us something that wasn\'t an episode. Maybe a comic. Trying again...\n"
 
     # Sammensæt url med tilfældige tal
     url = "http://www.watchseries.lt/episode/Adventure-Time-with-Finn-and-Jake_s" + str(season) + "_e" + str(
@@ -83,36 +97,54 @@ def link1():  # Funktion der vælger streaminglink
     # Suk
     episodeinfo2 = randomAdventure()
 
-    response = opener.open(str(episodeinfo2[3]))
-    html = response.read()
-    soup = BeautifulSoup(html, "lxml")
-    mylist = []
 
-    # Benyt foretrukken streamingside
-    if preference != "" and soup.find_all('a', href=True, title=preference) != []:
+    try: #Tjek for URLError/HTTPError ved forbindelse til watchseries.lt
+        response = opener.open(str(episodeinfo2[3]))
 
-        for a in soup.find_all('a', href=True, title=preference):
-            mylist.extend([a['href']])
+    except URLError as e: #FEJL
+        print bcolors.RED
+        if hasattr(e, 'reason'):
+            print 'Failed to reach the stream indexing server.'
+            print 'Reason: ', e.reason
+            print bcolors.ENDCOLOR
+            quit()
+        elif hasattr(e, 'code'):
+            print 'The stream indexing server couldn\'t fulfill the request.'
+            print 'Error code: ', e.code
+            print bcolors.ENDCOLOR
+            quit()
 
-        # Lav URL med tilfældigt valgt link til foretrukken streamingside
-        streamLink = "http://watchseries.lt" + random.choice(mylist)
-        episodeinfo2.append(streamLink)
+    else: #Ingen fejl
 
-        return episodeinfo2
+        html = response.read()
+        soup = BeautifulSoup(html, "lxml")
+        mylist = []
 
-    else:
+        # Benyt foretrukken streamingside
+        if preference != "" and soup.find_all('a', href=True, title=preference) != []:
 
-        for a in soup.find_all('a', href=True, class_="buttonlink"):
-            mylist.extend([a['href']])
+            for a in soup.find_all('a', href=True, title=preference):
+                mylist.extend([a['href']])
 
-        # Første link er en reklame - fjern dét.
-        mylist.remove(mylist[0])
+            # Lav URL med tilfældigt valgt link til foretrukken streamingside
+            streamLink = "http://watchseries.lt" + random.choice(mylist)
+            episodeinfo2.append(streamLink)
 
-        # Lav URL med tilfældigt valgt link til streamingside
-        streamLink = "http://watchseries.lt" + random.choice(mylist)
-        episodeinfo2.append(streamLink)
+            return episodeinfo2
 
-        return episodeinfo2
+        else:
+
+            for a in soup.find_all('a', href=True, class_="buttonlink"):
+                mylist.extend([a['href']])
+
+            # Første link er en reklame - fjern dét.
+            mylist.remove(mylist[0])
+
+            # Lav URL med tilfældigt valgt link til streamingside
+            streamLink = "http://watchseries.lt" + random.choice(mylist)
+            episodeinfo2.append(streamLink)
+
+            return episodeinfo2
 
 
 def link2():  # Funktion der åbner den faktiske streamingside
@@ -133,24 +165,59 @@ def link2():  # Funktion der åbner den faktiske streamingside
 
     return episodeinfo3
 
+def startbesked():
+    #Clear screen
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print bcolors.ATBG + bcolors.ATFG + r"""██████╗  █████╗ ███╗   ██╗██████╗  ██████╗ ███╗   ███╗
+██╔══██╗██╔══██╗████╗  ██║██╔══██╗██╔═══██╗████╗ ████║
+██████╔╝███████║██╔██╗ ██║██║  ██║██║   ██║██╔████╔██║
+██╔══██╗██╔══██║██║╚██╗██║██║  ██║██║   ██║██║╚██╔╝██║
+██║  ██║██║  ██║██║ ╚████║██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+
+ █████╗ ██████╗ ██╗   ██╗███████╗███╗   ██╗████████╗██╗   ██╗██████╗ ███████╗
+██╔══██╗██╔══██╗██║   ██║██╔════╝████╗  ██║╚══██╔══╝██║   ██║██╔══██╗██╔════╝
+███████║██║  ██║██║   ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝█████╗
+██╔══██║██║  ██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██╔══██╗██╔══╝
+██║  ██║██████╔╝ ╚████╔╝ ███████╗██║ ╚████║   ██║   ╚██████╔╝██║  ██║███████╗
+╚═╝  ╚═╝╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝ 0.2
+
+""" + bcolors.ENDCOLOR
+
+
+#VELKOMMEN
+startbesked()
+
 
 while True:
     # Suuuuuk
     episodeinfo4 = []
     episodeinfo4 = link2()
     # Hvordan undgår jeg at bruge episodeinfo 1, 2, 3 og 4?!?! Det kan ikke være rigtigt!!
-    print ""
 
-    print "Season " + episodeinfo4[0] + " episode " + episodeinfo4[1] + " - \'" + episodeinfo4[4] + "\':"
-    print "\'" + episodeinfo4[2] + "\'"
-    print ""
+    startbesked()
+    #print "__________________________________________________________________________"
 
+    print bcolors.UNDERLINE + bcolors.BOLD + bcolors.OKBLUE + "Season " + episodeinfo4[0] + " episode " + episodeinfo4[1] + " - \'" + episodeinfo4[4] + "\':" + bcolors.ENDCOLOR
+    episodetekst = "\'" + episodeinfo4[2] + "\'"
+
+    #Print nydeligt
+    dedented_text = textwrap.dedent(episodetekst).strip()
+    print textwrap.fill(dedented_text, width=60) + "\n"
+
+    print bcolors.DIM
     cont = raw_input("Do you want to watch this episode? (Y/N): ")
     while cont.lower() not in ("y", "n"):
         cont = raw_input("Do you want to watch this episode? (Y/N): ")
+        print bcolors.ENDCOLOR
     if cont == "y":
         print episodeinfo4[6]
         webbrowser.open(episodeinfo4[6], new=0, autoraise=True)
         break
     elif cont == "n":
+        startbesked()
+        bcolors.DIM
         print "Fair enough! Finding another one..."
+        print bcolors.ENDCOLOR
+
+
